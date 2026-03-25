@@ -1,0 +1,3 @@
+C:\Users\Master\source\repos\Tables-and-Trees\tests\Debug\gtest.pdb
+C:\Users\Master\source\repos\Tables-and-Trees\tests\Debug\gtest_main.pdb
+C:\Users\Master\source\repos\Tables-and-Trees\tests\tests\Debug\tests.vcxproj.Up2Date
