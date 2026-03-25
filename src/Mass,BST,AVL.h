@@ -1349,19 +1349,4 @@ auto AVLTree<TK, TV>::FindNodeInTree(const TK& key) const -> AVLNode* {
 	return t;
 }
 
-int main()
-{
-	setlocale(LC_CTYPE, "rus");
-	AVLTree<int, string> tree;
-	tree.Insert(5, "первый");
-	tree.Insert(8, "second");
-	tree.Insert(3, "three");
-	tree.Insert(6, "четвертый");
-	tree.Insert(10, "пятый");
-	tree.Insert(4, "шестой");
-	tree.BeautifullPrint();
-	
-	cout << endl;
-	cout << tree.Find(5);
 
-}
