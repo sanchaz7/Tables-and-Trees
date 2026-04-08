@@ -1,4 +1,6 @@
-﻿#include <iostream>
+﻿#pragma once
+
+#include <iostream>
 #include <vector>
 
 using namespace std;
@@ -51,6 +53,21 @@ public:
 		cout << endl;
 	}
 
+	//Функции для тестов:
+	vector<TV> TEST_GetValues() { //вернуть вектор значений
+		vector<TV> values;
+		values.reserve(data.size());
+		for (int i = 0; i < data.size(); i++) values.push_back(data[i].second);
+		return values;
+	}
+
+	vector<TK> TEST_GetKeys() { //вернуть вектор ключей
+		vector<TK> keys;
+		keys.reserve(data.size());
+		for (int i = 0; i < data.size(); i++) keys.push_back(data[i].first);
+		return keys;
+	}
+	int TEST_GetSize() { return data.size(); }
 };
 
 template <typename TK, typename TV>
@@ -816,7 +833,7 @@ auto AVLTree<TK, TV>::FindNodeInTree(const TK& key) const -> AVLNode* { //пои
 
 
 template<typename TK, typename TV>
-class AVLTree : public Table<TK,TV> {
+class AVLTree : public Table<TK, TV> {
 	struct AVLNode {
 		pair<TK, TV> KV;
 		AVLNode* left;
@@ -825,8 +842,7 @@ class AVLTree : public Table<TK,TV> {
 		int balance;
 
 		AVLNode() : left(nullptr), right(nullptr), parent(nullptr), balance(0) {}
-		AVLNode(TK k, TV v, AVLNode* r = nullptr, AVLNode* l = nullptr, AVLNode* p = nullptr)
-			: KV(k, v), left(l), right(r), parent(p), balance(0) {}
+		AVLNode(TK k, TV v) : KV(k, v), left(nullptr), right(nullptr), parent(nullptr), balance(0) {}
 	};
 	AVLNode* root;
 
@@ -861,12 +877,12 @@ protected:
 		BeautifullPrintTree(node->right, newPrefix, false);
 	}
 
+	// RR поворот (левый поворот)
 	AVLNode* RR(AVLNode* p) {
 		AVLNode* x = p->right;
 		AVLNode* y = x->left;
 		AVLNode* parent = p->parent;
 
-		// Переподвешиваем
 		x->left = p;
 		p->right = y;
 
@@ -874,25 +890,23 @@ protected:
 		p->parent = x;
 		x->parent = parent;
 
-		// Обновляем связь с родителем
 		if (parent) {
 			if (parent->left == p) parent->left = x;
 			else parent->right = x;
 		}
 
-		// Обновляем балансы
 		p->balance = 0;
 		x->balance = 0;
 
 		return x;
 	}
 
+	// LL поворот (правый поворот)
 	AVLNode* LL(AVLNode* p) {
 		AVLNode* x = p->left;
 		AVLNode* y = x->right;
 		AVLNode* parent = p->parent;
 
-		// Переподвешиваем
 		x->right = p;
 		p->left = y;
 
@@ -900,102 +914,33 @@ protected:
 		p->parent = x;
 		x->parent = parent;
 
-		// Обновляем связь с родителем
 		if (parent) {
 			if (parent->left == p) parent->left = x;
 			else parent->right = x;
 		}
 
-		// Обновляем балансы
 		p->balance = 0;
 		x->balance = 0;
 
 		return x;
 	}
 
-	AVLNode* RL(AVLNode* p) {
-		AVLNode* x = p->right;
-		AVLNode* y = x->left;
-		int balY = (y ? y->balance : 0);
-
-		// Сохраняем родителя
-		AVLNode* parent = p->parent;
-		bool isLeftChild = (parent && parent->left == p);
-
-		// Выполняем RR относительно x
-		AVLNode* newX = RR(x);
-		p->right = newX;
-		newX->parent = p;
-
-		// Выполняем LL относительно p
-		AVLNode* newRoot = LL(p);
-
-		// Обновляем балансы в зависимости от исходного баланса y
-		if (balY == 1) {
-			p->balance = -1;
-			x->balance = 0;
-		}
-		else if (balY == -1) {
-			p->balance = 0;
-			x->balance = 1;
-		}
-		else {
-			p->balance = 0;
-			x->balance = 0;
-		}
-		newRoot->balance = 0;
-
-		// Восстанавливаем связь с родителем
-		if (parent) {
-			if (isLeftChild) parent->left = newRoot;
-			else parent->right = newRoot;
-		}
-		newRoot->parent = parent;
-
-		return newRoot;
-	}
-
+	// LR поворот (левый-правый)
 	AVLNode* LR(AVLNode* p) {
-		AVLNode* x = p->left;
-		AVLNode* y = x->right;
-		int balY = (y ? y->balance : 0);
-
-		// Сохраняем родителя
-		AVLNode* parent = p->parent;
-		bool isLeftChild = (parent && parent->left == p);
-
-		// Выполняем LL относительно x
-		AVLNode* newX = LL(x);
-		p->left = newX;
-		newX->parent = p;
-
-		// Выполняем RR относительно p
-		AVLNode* newRoot = RR(p);
-
-		// Обновляем балансы в зависимости от исходного баланса y
-		if (balY == 1) {
-			p->balance = 0;
-			x->balance = -1;
-		}
-		else if (balY == -1) {
-			p->balance = 1;
-			x->balance = 0;
-		}
-		else {
-			p->balance = 0;
-			x->balance = 0;
-		}
-		newRoot->balance = 0;
-
-		// Восстанавливаем связь с родителем
-		if (parent) {
-			if (isLeftChild) parent->left = newRoot;
-			else parent->right = newRoot;
-		}
-		newRoot->parent = parent;
-
-		return newRoot;
+		if (!p->left) return p;
+		p->left = RR(p->left);
+		if (p->left) p->left->parent = p;
+		return LL(p);
 	}
+
+	// RL поворот (правый-левый)
+	AVLNode* RL(AVLNode* p) {
+		if (!p->right) return p;
+		p->right = LL(p->right);
+		if (p->right) p->right->parent = p;
+		return RR(p);
+	}
+
 public:
 	const TV& Find(const TK& Key) const override {
 		AVLNode* t = FindNodeInTree(Key);
@@ -1032,7 +977,6 @@ public:
 			return;
 		}
 
-		// Вставка как в BST
 		AVLNode* t = root;
 		while (true) {
 			if (key < t->KV.first) {
@@ -1053,26 +997,22 @@ public:
 			}
 		}
 
-		// Балансировка от родителя вверх
 		BalanceAfterInsert(node->parent, key < node->parent->KV.first);
 	}
+
 	void BalanceAfterInsert(AVLNode* node, bool GoLeft) {
 		AVLNode* cur = node;
 
 		while (cur != nullptr) {
-			// Обновляем баланс
 			if (GoLeft) cur->balance--;
 			else cur->balance++;
 
-			// Если баланс стал 0, высота не изменилась
 			if (cur->balance == 0) return;
 
-			// Проверяем нарушение баланса
 			if (cur->balance == 2 || cur->balance == -2) {
 				AVLNode* newRoot = nullptr;
 
 				if (cur->balance == 2) {
-					// Перевес вправо
 					if (cur->right->balance >= 0) {
 						newRoot = RR(cur);
 					}
@@ -1080,8 +1020,7 @@ public:
 						newRoot = RL(cur);
 					}
 				}
-				else { // cur->balance == -2
-					// Перевес влево
+				else {
 					if (cur->left->balance <= 0) {
 						newRoot = LL(cur);
 					}
@@ -1090,15 +1029,12 @@ public:
 					}
 				}
 
-				// Обновляем корень, если нужно
 				if (newRoot->parent == nullptr) {
 					root = newRoot;
 				}
-
-				return; // После одного поворота выход
+				return;
 			}
 
-			// Поднимаемся выше
 			if (cur->parent) {
 				GoLeft = (cur->parent->left == cur);
 			}
@@ -1113,7 +1049,7 @@ public:
 		AVLNode* balanceStart = nullptr;
 		bool GoLeft = false;
 
-		// Случай 1: лист (нет детей)
+		// Случай 1: лист
 		if (x->left == nullptr && x->right == nullptr) {
 			balanceStart = x->parent;
 			if (balanceStart) GoLeft = (balanceStart->left == x);
@@ -1164,14 +1100,11 @@ public:
 		// Случай 4: два потомка
 		else {
 			AVLNode* y = FindMin(x->right);
-
-			// Копируем данные из y в x
 			x->KV = y->KV;
 
 			AVLNode* par_y = y->parent;
 			AVLNode* child_y = y->right;
 
-			// Удаляем y
 			if (par_y->left == y) {
 				par_y->left = child_y;
 			}
@@ -1181,13 +1114,11 @@ public:
 
 			if (child_y) {
 				child_y->parent = par_y;
-				balanceStart = child_y;
-				GoLeft = (par_y->left == child_y);
 			}
-			else {
-				balanceStart = par_y;
-				GoLeft = (par_y->left == y);
-			}
+
+			// ВСЕГДА начинаем балансировку от родителя удалённого узла y
+			balanceStart = par_y;
+			GoLeft = (par_y->left == y);
 
 			delete y;
 		}
@@ -1197,32 +1128,38 @@ public:
 			BalanceAfterDelete(balanceStart, GoLeft);
 		}
 	}
+
 	void BalanceAfterDelete(AVLNode* balanceStart, bool GoLeft) {
 		AVLNode* cur = balanceStart;
 
 		while (cur != nullptr) {
-			// Сохраняем старый баланс для определения направления
-			int oldBalance = cur->balance;
-
-			// Обновляем баланс текущего узла
+			// Обновляем баланс
 			if (GoLeft) cur->balance--;
 			else cur->balance++;
 
-			// Проверяем нарушение баланса
+			// Если баланс стал 0, высота уменьшилась — поднимаемся выше
+			if (cur->balance == 0) {
+				if (cur->parent) {
+					GoLeft = (cur->parent->left == cur);
+					cur = cur->parent;
+				}
+				else {
+					break;
+				}
+				continue;
+			}
+
+			// Если баланс ±1 — останавливаемся
+			if (cur->balance == 1 || cur->balance == -1) {
+				break;
+			}
+
+			// Нарушение баланса
 			if (cur->balance == -2 || cur->balance == 2) {
 				AVLNode* newRoot = nullptr;
 
 				if (cur->balance == 2) {
 					// Перевес вправо
-					// Важно: проверяем существование правого потомка
-					if (cur->right == nullptr) {
-						// Аномалия: не должно быть, но если случилось - исправляем
-						cur->balance = 0;
-						cur = cur->parent;
-						if (cur) GoLeft = (cur->left == cur->parent);
-						continue;
-					}
-
 					if (cur->right->balance >= 0) {
 						newRoot = RR(cur);
 					}
@@ -1232,14 +1169,6 @@ public:
 				}
 				else { // cur->balance == -2
 					// Перевес влево
-					if (cur->left == nullptr) {
-						// Аномалия: не должно быть, но если случилось - исправляем
-						cur->balance = 0;
-						cur = cur->parent;
-						if (cur) GoLeft = (cur->left == cur->parent);
-						continue;
-					}
-
 					if (cur->left->balance <= 0) {
 						newRoot = LL(cur);
 					}
@@ -1248,38 +1177,75 @@ public:
 					}
 				}
 
-				// newRoot уже имеет правильные связи через повороты
-				cur = newRoot;
-
-				// Обновляем корень, если нужно
-				if (cur->parent == nullptr) {
-					root = cur;
+				// newRoot — новый корень поддерева
+				// Обновляем корень всего дерева, если нужно
+				if (newRoot->parent == nullptr) {
+					root = newRoot;
 				}
 
 				// После поворота продолжаем балансировку от родителя
-				if (cur->parent) {
-					GoLeft = (cur->parent->left == cur);
-					cur = cur->parent;
+				cur = newRoot->parent;
+				if (cur) {
+					GoLeft = (cur->left == newRoot);
 				}
 				else {
 					break;
 				}
-			}
-			// Если баланс стал 0, значит высота уменьшилась, нужно подняться выше
-			else if (cur->balance == 0) {
-				if (cur->parent) {
-					GoLeft = (cur->parent->left == cur);
-					cur = cur->parent;
-				}
-				else {
-					break;
-				}
-			}
-			// Если баланс стал ±1, высота не изменилась — останавливаемся
-			else { // cur->balance == 1 || cur->balance == -1
-				break;
 			}
 		}
+	}
+
+	// Тестовые методы
+	TK TEST_GetRoot() {
+		if (!root) throw runtime_error("Tree is empty");
+		return root->KV.first;
+	}
+
+	bool TEST_Tree_is_AVL(AVLNode* node) {
+		if (!node) return true;
+		if (abs(node->balance) > 1) return false;
+		return TEST_Tree_is_AVL(node->left) && TEST_Tree_is_AVL(node->right);
+	}
+
+	bool TEST_tree_is_AVL_from_root() {
+		return TEST_Tree_is_AVL(root);
+	}
+
+	vector<TK> TEST_GetKeys() {
+		vector<TK> keys;
+		AVLNode* t = FindMin(root);
+		while (t != nullptr) {
+			keys.push_back(t->KV.first);
+			t = FindNext(t);
+		}
+		return keys;
+	}
+
+	vector<TV> TEST_GetValues() {
+		vector<TV> values;
+		AVLNode* t = FindMin(root);
+		while (t != nullptr) {
+			values.push_back(t->KV.second);
+			t = FindNext(t);
+		}
+		return values;
+	}
+
+	bool TEST_CheckParentLinks(AVLNode* node, AVLNode* expectedParent = nullptr) {
+		if (!node) return true;
+		if (node->parent != expectedParent) {
+			cout << "Parent link error: node " << node->KV.first
+				<< " parent=" << (node->parent ? to_string(node->parent->KV.first) : "null")
+				<< " expected=" << (expectedParent ? to_string(expectedParent->KV.first) : "null") << endl;
+			return false;
+		}
+		return TEST_CheckParentLinks(node->left, node) &&
+			TEST_CheckParentLinks(node->right, node);
+	}
+
+	bool TEST_CheckParentLinks() {
+		if (!root) return true;
+		return TEST_CheckParentLinks(root, nullptr);
 	}
 };
 
@@ -1303,44 +1269,31 @@ auto AVLTree<TK, TV>::FindMax(AVLNode* subtree) const -> AVLNode* {
 template<typename TK, typename TV>
 auto AVLTree<TK, TV>::FindNext(AVLNode* x) const -> AVLNode* {
 	if (x == nullptr) return nullptr;
-	if (x == FindMax(root)) return nullptr;
-
-	if (x->right != nullptr) {
-		return FindMin(x->right);
+	if (x->right != nullptr) return FindMin(x->right);
+	AVLNode* cur = x;
+	AVLNode* par = x->parent;
+	while (par != nullptr && par->right == cur) {
+		cur = par;
+		par = par->parent;
 	}
-	else {
-		AVLNode* cur = x;
-		AVLNode* par = x->parent;
-		while (par != nullptr && par->right == cur) {
-			cur = par;
-			par = par->parent;
-		}
-		return par;
-	}
+	return par;
 }
 
 template<typename TK, typename TV>
 auto AVLTree<TK, TV>::FindBefore(AVLNode* x) const -> AVLNode* {
 	if (x == nullptr) return nullptr;
-	if (x == FindMin(root)) return nullptr;
-
-	if (x->left != nullptr) {
-		return FindMax(x->left);
+	if (x->left != nullptr) return FindMax(x->left);
+	AVLNode* cur = x;
+	AVLNode* par = x->parent;
+	while (par != nullptr && par->left == cur) {
+		cur = par;
+		par = par->parent;
 	}
-	else {
-		AVLNode* cur = x;
-		AVLNode* par = x->parent;
-		while (par != nullptr && par->left == cur) {
-			cur = par;
-			par = par->parent;
-		}
-		return par;
-	}
+	return par;
 }
 
 template<typename TK, typename TV>
 auto AVLTree<TK, TV>::FindNodeInTree(const TK& key) const -> AVLNode* {
-	if (root == nullptr) return nullptr;
 	AVLNode* t = root;
 	while (t != nullptr && t->KV.first != key) {
 		if (key < t->KV.first) t = t->left;
@@ -1348,5 +1301,3 @@ auto AVLTree<TK, TV>::FindNodeInTree(const TK& key) const -> AVLNode* {
 	}
 	return t;
 }
-
-
