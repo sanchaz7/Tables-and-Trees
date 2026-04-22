@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "C:\Users\Master\source\repos\Tables-and-Trees\src\structures.h"
+#include "C:\Users\Master\source\repos\Tables-and-Trees\src\hash_chain.h"
 #include <string>
 
 using namespace std;
@@ -378,4 +379,155 @@ TEST(AVLTreeTest, Delete_and_LL) {
 
     cout << "Tree after delete causing LL rotation:" << endl;
     tree.BeautifullPrint();
+}
+
+
+
+//======================Тесты для хэш таблицы===============
+TEST(HashTableChainTest, Create_empty_table) {
+    HashTableChain<int, string> table;
+    EXPECT_EQ(table.TEST_GetCount(), 0);
+    EXPECT_THROW(table.Find(12), out_of_range);
+    table.PrintAll();
+}
+
+TEST(HashTableChainTest, Insert_1) {
+    HashTableChain<int, string> table;
+    table.Insert(5, "a");
+    table.Insert(10, "b");
+    table.Insert(192, "c");
+
+    EXPECT_EQ(table.TEST_GetCount(), 3);
+    EXPECT_EQ(table.Find(5), "a");
+    EXPECT_EQ(table.Find(10), "b");
+    EXPECT_EQ(table.Find(192), "c");
+    EXPECT_THROW(table.Find(12), out_of_range);
+    table.PrintAll();
+}
+
+TEST(HashTableChainTest, Delete_1) {
+    HashTableChain<int, string> table;
+    table.Insert(5, "a");
+    table.Insert(10, "b");
+    table.Insert(192, "c");
+
+    EXPECT_EQ(table.TEST_GetCount(), 3);
+
+    table.Delete(10);
+
+    EXPECT_EQ(table.TEST_GetCount(), 2);
+    EXPECT_EQ(table.Find(5), "a");
+    EXPECT_EQ(table.Find(192), "c");
+    EXPECT_THROW(table.Find(10), out_of_range);
+    table.PrintAll();
+}
+TEST(HashTableChainTest, Delete_First_Element_In_Chain) {
+    HashTableChain<int, string> table;
+    table.Insert(5, "a");
+    table.Insert(10, "b");    // если 5 и 10 попадают в одну корзину
+    table.Insert(15, "c");
+
+    table.Delete(5);  // удаляем голову списка
+
+    EXPECT_EQ(table.TEST_GetCount(), 2);
+    EXPECT_THROW(table.Find(5), out_of_range);
+    EXPECT_EQ(table.Find(10), "b");
+    EXPECT_EQ(table.Find(15), "c");
+    table.PrintAll();
+}
+
+TEST(HashTableChainTest, Delete_Last_Element_In_Chain) {
+    HashTableChain<int, string> table;
+    table.Insert(5, "a");
+    table.Insert(10, "b");
+    table.Insert(15, "c");
+
+    table.Delete(15);  // удаляем хвост списка
+
+    EXPECT_EQ(table.TEST_GetCount(), 2);
+    EXPECT_EQ(table.Find(5), "a");
+    EXPECT_EQ(table.Find(10), "b");
+    EXPECT_THROW(table.Find(15), out_of_range);
+    table.PrintAll();
+}
+TEST(HashTableChainTest, Delete_All_Elements_One_By_One) {
+    HashTableChain<int, string> table;
+    table.Insert(1, "a");
+    table.Insert(2, "b");
+    table.Insert(3, "c");
+
+    table.Delete(2);
+    EXPECT_EQ(table.TEST_GetCount(), 2);
+    EXPECT_THROW(table.Find(2), out_of_range);
+
+    table.Delete(1);
+    EXPECT_EQ(table.TEST_GetCount(), 1);
+    EXPECT_THROW(table.Find(1), out_of_range);
+
+    table.Delete(3);
+    EXPECT_EQ(table.TEST_GetCount(), 0);
+    EXPECT_THROW(table.Find(3), out_of_range);
+
+    table.PrintAll();
+}
+
+TEST(HashTableChainTest, Complex_Operations_With_Small_M) {
+    // Создаём таблицу с M=5, чтобы было много коллизий
+    HashTableChain<int, string> table(5);
+
+    // Много вставок (все ключи будут иметь коллизии, т.к. 5,10,15,20... % 5 = 0)
+    for (int i = 1; i <= 20; i++) {
+        table.Insert(i, "value_" + to_string(i));
+    }
+    EXPECT_EQ(table.TEST_GetCount(), 20);
+
+    // Проверяем, что все элементы на месте
+    for (int i = 1; i <= 20; i++) {
+        EXPECT_EQ(table.Find(i), "value_" + to_string(i));
+    }
+
+    // Удаляем каждый второй элемент
+    for (int i = 2; i <= 20; i += 2) {
+        table.Delete(i);
+    }
+    EXPECT_EQ(table.TEST_GetCount(), 10);
+
+    // Проверяем, что чётные удалены, нечётные остались
+    for (int i = 1; i <= 20; i++) {
+        if (i % 2 == 0) {
+            EXPECT_THROW(table.Find(i), out_of_range);
+        }
+        else {
+            EXPECT_EQ(table.Find(i), "value_" + to_string(i));
+        }
+    }
+
+    // Обновляем значения у оставшихся
+    for (int i = 1; i <= 20; i += 2) {
+        table.Insert(i, "updated_" + to_string(i));
+    }
+
+    // Проверяем обновление
+    for (int i = 1; i <= 20; i += 2) {
+        EXPECT_EQ(table.Find(i), "updated_" + to_string(i));
+    }
+
+    // Вставляем новые элементы с другими ключами
+    table.Insert(100, "hundred");
+    table.Insert(101, "one_o_one");
+    table.Insert(102, "one_o_two");
+    EXPECT_EQ(table.TEST_GetCount(), 13);
+
+    // Удаляем всё подряд
+    for (int i = 1; i <= 20; i += 2) {
+        table.Delete(i);
+    }
+    table.Delete(100);
+    table.Delete(101);
+    table.Delete(102);
+
+    EXPECT_EQ(table.TEST_GetCount(), 0);
+    EXPECT_THROW(table.Find(1), out_of_range);
+
+    table.PrintAll();
 }
