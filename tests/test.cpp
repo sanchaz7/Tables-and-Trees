@@ -1,4 +1,5 @@
 ﻿#include "pch.h"
+#include "C:\Users\Master\source\repos\Tables-and-Trees\src\AVL.h"
 #include "C:\Users\Master\source\repos\Tables-and-Trees\src\structures.h"
 #include "C:\Users\Master\source\repos\Tables-and-Trees\src\hash_chain.h"
 #include <string>
@@ -381,6 +382,151 @@ TEST(AVLTreeTest, Delete_and_LL) {
     tree.BeautifullPrint();
 }
 
+TEST(AVLTreeTest, Delete_and_RL) {
+    AVLTree<int, string> tree;
+
+    tree.Insert(10, "10");
+    tree.Insert(5, "5");
+    tree.Insert(20, "20");
+    tree.Insert(15, "15");
+    tree.Delete(5);
+
+    EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+    EXPECT_TRUE(tree.TEST_CheckParentLinks());
+
+    // После RL поворота новым корнем должен стать 15
+    EXPECT_EQ(tree.TEST_GetRoot(), 15);
+
+    vector<int> expectedKeys = { 10, 15, 20 };
+    EXPECT_EQ(tree.TEST_GetKeys(), expectedKeys);
+
+    EXPECT_EQ(tree.Find(10), "10");
+    EXPECT_EQ(tree.Find(15), "15");
+    EXPECT_EQ(tree.Find(20), "20");
+}
+
+TEST(AVLTreeTest, Delete_and_LR) {
+    AVLTree<int, string> tree;
+
+    tree.Insert(20, "20");
+    tree.Insert(10, "10");
+    tree.Insert(30, "30");
+    tree.Insert(15, "15");
+    tree.Delete(30);
+
+    EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+    EXPECT_TRUE(tree.TEST_CheckParentLinks());
+
+    // После LR поворота новым корнем должен стать 15
+    EXPECT_EQ(tree.TEST_GetRoot(), 15);
+
+    vector<int> expectedKeys = { 10, 15, 20 };
+    EXPECT_EQ(tree.TEST_GetKeys(), expectedKeys);
+
+    EXPECT_EQ(tree.Find(10), "10");
+    EXPECT_EQ(tree.Find(15), "15");
+    EXPECT_EQ(tree.Find(20), "20");
+}
+
+TEST(AVLTreeTest, Delete_Node_With_Two_Children) {
+    AVLTree<int, string> tree;
+
+    tree.Insert(50, "50");
+    tree.Insert(30, "30");
+    tree.Insert(70, "70");
+    tree.Insert(20, "20");
+    tree.Insert(40, "40");
+    tree.Insert(60, "60");
+    tree.Insert(80, "80");
+
+    tree.Delete(50);
+
+    EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+    EXPECT_TRUE(tree.TEST_CheckParentLinks());
+
+    int newRoot = tree.TEST_GetRoot();
+    EXPECT_TRUE(newRoot == 60 || newRoot == 40);
+
+    vector<int> keys = tree.TEST_GetKeys();
+    EXPECT_EQ(keys.size(), 6);
+    EXPECT_EQ(find(keys.begin(), keys.end(), 50), keys.end());
+
+    EXPECT_EQ(tree.Find(30), "30");
+    EXPECT_EQ(tree.Find(70), "70");
+    EXPECT_EQ(tree.Find(20), "20");
+    EXPECT_EQ(tree.Find(40), "40");
+    EXPECT_EQ(tree.Find(60), "60");
+    EXPECT_EQ(tree.Find(80), "80");
+}
+
+TEST(AVLTreeTest, Delete_Cascade_Balancing) {
+    AVLTree<int, string> tree;
+
+    tree.Insert(50, "50");
+    tree.Insert(25, "25");
+    tree.Insert(75, "75");
+    tree.Insert(10, "10");
+    tree.Insert(30, "30");
+    tree.Insert(60, "60");
+    tree.Insert(80, "80");
+    tree.Insert(5, "5");
+
+    tree.Delete(30);
+
+    EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+    EXPECT_TRUE(tree.TEST_CheckParentLinks());
+
+    vector<int> keys = tree.TEST_GetKeys();
+    EXPECT_EQ(keys.size(), 7);
+    EXPECT_EQ(find(keys.begin(), keys.end(), 30), keys.end());
+}
+
+TEST(AVLTreeTest, More_Deletes) {
+    AVLTree<int, string> tree;
+
+    for (int i = 1; i <= 15; i++) {
+        tree.Insert(i, to_string(i));
+    }
+
+    EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+    EXPECT_TRUE(tree.TEST_CheckParentLinks());
+
+    //удаление всех четных
+    for (int i = 2; i <= 14; i += 2) {
+        tree.Delete(i);
+        EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+        EXPECT_TRUE(tree.TEST_CheckParentLinks());
+    }
+
+    vector<int> expectedKeys = { 1, 3, 5, 7, 9, 11, 13, 15 };
+    EXPECT_EQ(tree.TEST_GetKeys(), expectedKeys);
+
+    // Удаление оставшихся
+    for (int i = 1; i <= 15; i += 2) {
+        tree.Delete(i);
+        EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+        EXPECT_TRUE(tree.TEST_CheckParentLinks());
+    }
+
+    vector<int> emptyKeys = {};
+    EXPECT_EQ(tree.TEST_GetKeys(), emptyKeys);
+}
+
+TEST(AVLTreeTest, Delete_NonExistent_Key) {
+    AVLTree<int, string> tree;
+
+    tree.Insert(10, "10");
+    tree.Insert(20, "20");
+    tree.Insert(30, "30");
+
+    tree.Delete(99);
+
+    EXPECT_TRUE(tree.TEST_tree_is_AVL_from_root());
+    EXPECT_TRUE(tree.TEST_CheckParentLinks());
+
+    vector<int> expectedKeys = { 10, 20, 30 };
+    EXPECT_EQ(tree.TEST_GetKeys(), expectedKeys);
+}
 
 
 //======================Тесты для хэш таблицы===============
